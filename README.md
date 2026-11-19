@@ -1,6 +1,2 @@
 # HILL-CLIMB-RACING-2
-    ___    _   ____  ______  __________  _____   ___    ____
-   /   |  / | / / / / / __ \/ ____/ __ \/__  /  /   |  /  _/
-  / /| | /  |/ / /_/ / / / / __/ / /_/ /  / /  / /| |  / /  
- / ___ |/ /|  / __  / /_/ / /___/ ____/  / /__/ ___ |_/ /   
-/_/  |_/_/ |_/_/ /_/_____/_____/_/      /____/_/  |_/___/   
+<img src="[https://readme-typing-svg.demolab.com?font=Black+Ops+One&size=48&duration=3000&pause=1000&color=FFD700&center=true&vCenter=true&width=500&height=80&lines=ANHDEPZAI](https://readme-typing-svg.demolab.com?font=Black+Ops+One&size=48&duration=3000&pause=1000&color=FFD700&center=true&vCenter=true&width=500&height=80&lines=ANHDEPZAI)" />
