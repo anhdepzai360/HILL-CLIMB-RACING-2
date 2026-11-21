@@ -1,14 +1,3 @@
---[[
-╔══════════════════════════════════════════════════════════════╗
-║         ▓▓▓  AɴнDᴇᴘZᴀı SCRIPT V3.4  ▓▓▓                     ║
-║              HCR2 Cheat Menu                   ║
-║                                                              ║
-║    📢 Discord  :: anhhoang_907                               ║
-║    📢 Telegram :: t.me/anhdepzai360                          ║
-║    📢 Youtube  :: @Andepza                                   ║
-╚══════════════════════════════════════════════════════════════╝
-]]
-
 local LIB_BASE = nil
 local archType = 0
 local currentRange = nil
@@ -1280,6 +1269,7 @@ end
 -- ═══════════════════════════════════════════════════════════════
 --  TEAM EVENT
 -- ═══════════════════════════════════════════════════════════════
+local TE_apiUrl = "https://api.github.com/repos/anhdepzai360/HILL-CLIMB-RACING-2/contents/Gamestartvehicle.lua"
 local TE = {
     VerifyRetryCount=0x11F, VerifyMatchmakingReq=0x123, VerifyUnknown3=0x127,
     StartServerTimestamp=0x12B, StartClientTimestamp=0x12F, EndEventTimestamp=0x133,
@@ -1302,17 +1292,242 @@ local TE_VerifyPatterns = {
 }
 local TE_History = {}
 local TE_DurationInput = nil
+local TE_VehicleCache = { base = nil, limitBase = nil, timestamp = 0 }
+
 local function TE_readOne(addr, flags)
     if not addr or type(addr) ~= "number" then return nil end
     local v = gg.getValues({{address = addr, flags = flags}})
     return (v and v[1]) and v[1].value or nil
 end
-local function TE_verifyBase(base)
+local function TE_safeAddr(addr)
+    if not addr or type(addr) ~= "number" or addr == 0 then return nil end
+    return addr
+end
+local function TE_safeRead(addr, flags)
+    addr = TE_safeAddr(addr)
+    if not addr then return nil end
+    return TE_readOne(addr, flags)
+end
+local function TE_safeAdd(a, b)
+    if not a or not b or type(a) ~= "number" or type(b) ~= "number" then return nil end
+    return a + b
+end
+local function TE_verifyBase(base, editedValues)
     for _, pat in ipairs(TE_VerifyPatterns) do
         local cur = TE_readOne(base + pat.offset, gg.TYPE_DWORD)
-        if cur == nil or cur ~= pat.expected then return false end
+        if cur == nil then return false end
+        if cur ~= pat.expected then
+            if not (editedValues and editedValues[pat.offset] ~= nil and cur == editedValues[pat.offset]) then
+                return false
+            end
+        end
     end
     return true
+end
+local function TE_ensureVehicleList()
+    if type(GameStatusVehicles) == "table" and type(GameStatusVehicles[1]) == "table" and type(GameStatusVehicles[2]) == "table" then
+        return true
+    end
+    gg.toast("Đang tải danh sách xe Team Event...")
+    local ok, res = pcall(function() return gg.makeRequest(TE_apiUrl) end)
+    if ok and res and res.code == 200 and res.content then
+        local block = res.content:match("(GameStatusVehicles%s*=%s*%b{})")
+        if block then
+            local fn = load(block)
+            if fn and pcall(fn) and type(GameStatusVehicles) == "table" then
+                gg.toast("✅ Đã tải GameStatusVehicles")
+                return true
+            end
+        end
+    end
+    gg.alert("❌ Không tải được danh sách xe (GameStatusVehicles)!")
+    return false
+end
+local function TE_getServerTime()
+    local sources = {
+        { url = "https://timeapi.io/api/Time/current/zone?timeZone=UTC",
+          pattern = '"secondsSinceEpoch"%s*:%s*(%d+)' },
+        { url = "https://worldtimeapi.org/api/timezone/Etc/UTC",
+          pattern = '"unixtime"%s*:%s*(%d+)' },
+        { url = "https://currentmillis.com/time/minutes-since-unix-epoch.php",
+          pattern = '(%d+)', multiplier = 60 },
+    }
+    for _, src in ipairs(sources) do
+        local ok, res = pcall(function() return gg.makeRequest(src.url) end)
+        if ok and res and res.code == 200 and res.content then
+            local raw = res.content:match(src.pattern)
+            if raw then
+                local ts = tonumber(raw)
+                if ts then return ts * (src.multiplier or 1) end
+            end
+        end
+    end
+    return os.time()
+end
+local function TE_fmtCountdown(secs)
+    secs = math.abs(math.floor(secs))
+    local d = math.floor(secs / 86400)
+    local h = math.floor((secs % 86400) / 3600)
+    local m = math.floor((secs % 3600) / 60)
+    local s = secs % 60
+    if d > 0 then return string.format("%dd %02dh %02dm %02ds", d, h, m, s) end
+    if h > 0 then return string.format("%02dh %02dm %02ds", h, m, s) end
+    return string.format("%02dm %02ds", m, s)
+end
+local function TE_localFmt(ts)
+    if not ts or ts == 0 then return "⚫ Not Set" end
+    return os.date("%Y-%m-%d  %I:%M:%S %p", ts) .. "  (" .. os.date("%Z") .. ")"
+end
+local function TE_fmtStatus(ts, now, isEnd)
+    if not ts or ts == 0 then return "⚫ Not Set" end
+    local diff = ts - now
+    if isEnd then
+        if diff > 0 then return "⌛ Ends in  " .. TE_fmtCountdown(diff) end
+        return "⛔ Already Ended"
+    else
+        if diff > 0 then return "⏳ Starts Later  →  " .. TE_fmtCountdown(diff) end
+        if diff == 0 then return "🔴 Starting Now" end
+        return "✅ Started  " .. TE_fmtCountdown(-diff) .. " ago"
+    end
+end
+local function TE_promptTimestampValue(base, readOffset, now, isEnd)
+    local cur = TE_readOne(base + readOffset, gg.TYPE_DWORD) or 0
+    local t   = os.date("*t", cur > 0 and cur or now)
+    local h12 = t.hour % 12
+    if h12 == 0 then h12 = 12 end
+    local isPM = os.date("*t", now).hour >= 12
+    local inp = gg.prompt(
+        {
+            "Unix Value (0 = remove)",
+            "Day [1;31]",
+            "Month [1;12]",
+            "Year [2020;2030]",
+            "Hour [1;12]",
+            "Min [1;59]",
+            "Sec [1;59]",
+            "☑ Check if you want PM",
+        },
+        {
+            tostring(cur),
+            tostring(t.day),
+            tostring(t.month),
+            tostring(t.year),
+            tostring(h12),
+            tostring(t.min),
+            tostring(t.sec),
+            isPM,
+        },
+        {
+            "number",
+            "number","number","number",
+            "number","number","number",
+            "checkbox",
+        }
+    )
+    if not inp then gg.toast("Cancelled"); return nil end
+    local newTs
+    local rawIn = tonumber(inp[1])
+    if rawIn ~= nil and rawIn ~= cur then
+        newTs = math.floor(rawIn)
+    else
+        local d   = tonumber(inp[2])
+        local mo  = tonumber(inp[3])
+        local y   = tonumber(inp[4])
+        local h   = tonumber(inp[5])
+        local mi  = tonumber(inp[6])
+        local se  = tonumber(inp[7])
+        local isPM2 = inp[8] or false
+        if not (d and mo and y and h and mi and se) then
+            gg.toast("⚠️ Invalid input"); return nil
+        end
+        local h24 = h % 12
+        if isPM2 then h24 = h24 + 12 end
+        newTs = os.time({ year=y, month=mo, day=d, hour=h24, min=mi, sec=se })
+    end
+    if newTs == nil or newTs == cur then gg.toast("⚠️ No change"); return nil end
+    if newTs == 0 then
+        local c = gg.prompt({"⚠️ Set to 0?"}, {false}, {"checkbox"})
+        if not c or not c[1] then gg.toast("Cancelled"); return nil end
+    end
+    if newTs > 0 then
+        local diff = newTs - now
+        if diff > 0 then
+            if isEnd then
+                gg.toast("⌛ Event will end in " .. TE_fmtCountdown(diff))
+            else
+                gg.toast("⏳ Will start later →  " .. TE_fmtCountdown(diff))
+            end
+        end
+    end
+    return newTs
+end
+local function TE_editTimestampBlock(base, offset, label, now, isEnd)
+    local newTs = TE_promptTimestampValue(base, offset, now, isEnd)
+    if newTs == nil then return end
+    local ok = pcall(function()
+        gg.setValues({{ address = base + offset, flags = gg.TYPE_DWORD, value = newTs }})
+    end)
+    gg.toast(ok and "✅ Set" or "❌ Write failed")
+end
+local function TE_editTimestampDual(base, offsets, label, now, isEnd)
+    local newTs = TE_promptTimestampValue(base, offsets[1], now, isEnd)
+    if newTs == nil then return end
+    local batch = {}
+    for _, off in ipairs(offsets) do
+        table.insert(batch, { address = base + off, flags = gg.TYPE_DWORD, value = newTs })
+    end
+    local ok = pcall(function() gg.setValues(batch) end)
+    gg.toast(ok and "✅ Set" or "❌ Write failed")
+end
+local function TE_showTimestampEditor(base)
+    gg.toast("Fetching server time...")
+    local now    = TE_getServerTime()
+    local sStart = TE_readOne(base + TE.StartServerTimestamp, gg.TYPE_DWORD) or 0
+    local eEnd   = TE_readOne(base + TE.EndEventTimestamp, gg.TYPE_DWORD) or 0
+    local menu = gg.prompt(
+        {
+            "🌐Current Time Now: " .. TE_localFmt(now) .. "\n🟢 Start: " .. TE_localFmt(sStart) .. "\n" .. TE_fmtStatus(sStart, now, false),
+            "🔴 End: " .. TE_localFmt(eEnd) .. "\n" .. TE_fmtStatus(eEnd, now, true),
+            "⚫ Remove All 3 Timestamps",
+        },
+        { false, false, false },
+        { "checkbox", "checkbox", "checkbox" }
+    )
+    if not menu then return end
+    if menu[3] then
+        local c = gg.prompt({ "⚠️ Remove event from game event list?\nAll 3 timestamps → 0" }, { false }, { "checkbox" })
+        if c and c[1] then
+            pcall(function()
+                gg.setValues({
+                    { address = base + TE.StartServerTimestamp, flags = gg.TYPE_DWORD, value = 0 },
+                    { address = base + TE.StartClientTimestamp, flags = gg.TYPE_DWORD, value = 0 },
+                    { address = base + TE.EndEventTimestamp, flags = gg.TYPE_DWORD, value = 0 },
+                })
+            end)
+            gg.toast("⚫ Event removed from list")
+        end
+        return
+    end
+    if menu[1] then
+        TE_editTimestampDual(base, { TE.StartServerTimestamp, TE.StartClientTimestamp }, "Start Time", now, false)
+    end
+    if menu[2] then
+        TE_editTimestampBlock(base, TE.EndEventTimestamp, "End Time", now, true)
+    end
+end
+local function TE_runJudge0(sourceCode, label)
+    local function jsonEscape(str)
+        return str:gsub("\\", "\\\\"):gsub("\n", "\\n"):gsub("\"", "\\\"")
+    end
+    local body = string.format('{"language_id":64,"source_code":"%s"}', jsonEscape(sourceCode))
+    local headers = { ["Content-Type"] = "application/json", ["Accept"] = "application/json" }
+    local res = gg.makeRequest("https://ce.judge0.com/submissions?wait=true", headers, body, "POST")
+    if res and (res.code == 201 or res.code == 200) then
+        local stdout = res.content:match('"stdout"%s*:%s*"([^"]*)"')
+        stdout = stdout and stdout:gsub("\\n", "\n") or res.content
+        return stdout:gsub("%z", "")
+    end
+    return nil, "Error or no response for " .. tostring(label)
 end
 local function TE_searchEvent()
     local input = gg.prompt({"Tên Event (VD: :Hooked on a Wheelin'):"}, {""}, {"text"})
@@ -1320,7 +1535,7 @@ local function TE_searchEvent()
     local label = input[1]; local len = #label
     local word = label:match("^(%S+)") or label
     local firstChar = label:sub(1, 1)
-    gg.clearResults(); gg.setRanges(RANGE_VALUE)
+    gg.clearResults(); gg.setVisible(false); gg.setRanges(RANGE_VALUE)
     gg.searchNumber(":" .. label, gg.TYPE_BYTE)
     gg.refineNumber(":" .. word, gg.TYPE_BYTE)
     gg.refineNumber(":" .. firstChar, gg.TYPE_BYTE)
@@ -1332,7 +1547,7 @@ local function TE_searchEvent()
     if len <= 23 then
         for _, r in ipairs(refineResults) do
             if not TE_History[label].verified[r.address] then
-                if TE_verifyBase(r.address) then
+                if TE_verifyBase(r.address, nil) then
                     TE_History[label].verified[r.address] = true
                     TE_History[label].results[#TE_History[label].results+1] = r
                     added = added + 1
@@ -1353,7 +1568,7 @@ local function TE_searchEvent()
                 local v = gg.getValues({{address = checkAddr, flags = gg.TYPE_DWORD}})
                 if v and v[1] and v[1].value >= 0 and v[1].value <= 100 then
                     if not TE_History[label].verified[base] then
-                        if TE_verifyBase(base) then
+                        if TE_verifyBase(base, nil) then
                             TE_History[label].verified[base] = true
                             TE_History[label].results[#TE_History[label].results+1] = {address = base}
                             added = added + 1
@@ -1366,11 +1581,23 @@ local function TE_searchEvent()
     gg.toast("✅ Pointer-verified " .. added .. " cho: " .. label)
     gg.clearResults()
 end
-local function TE_applyEdits(base, selectedEdits)
-    local batch = {}
+local function TE_applyEdits(base, selectedEdits, storeOriginal)
+    local batch, originals = {}, {}
     for _, idx in ipairs(selectedEdits) do
-        if idx == 1 then batch[#batch+1] = {address=base+TE.EditMatchmakingReq, flags=gg.TYPE_DWORD, value=1}
-        elseif idx == 2 then batch[#batch+1] = {address=base+TE.EditTeamTicketJoin, flags=gg.TYPE_DWORD, value=0}
+        if idx == 6 then
+            TE_showTimestampEditor(base)
+        elseif idx == 1 then
+            if storeOriginal then
+                local o = TE_readOne(base + TE.EditMatchmakingReq, gg.TYPE_DWORD)
+                if o then originals[#originals+1] = {address=base+TE.EditMatchmakingReq, flags=gg.TYPE_DWORD, value=o} end
+            end
+            batch[#batch+1] = {address=base+TE.EditMatchmakingReq, flags=gg.TYPE_DWORD, value=1}
+        elseif idx == 2 then
+            if storeOriginal then
+                local o = TE_readOne(base + TE.EditTeamTicketJoin, gg.TYPE_DWORD)
+                if o then originals[#originals+1] = {address=base+TE.EditTeamTicketJoin, flags=gg.TYPE_DWORD, value=o} end
+            end
+            batch[#batch+1] = {address=base+TE.EditTeamTicketJoin, flags=gg.TYPE_DWORD, value=0}
         elseif idx == 3 then
             local orig = TE_readOne(base + TE.EditTicketRefill, gg.TYPE_DWORD)
             if orig then
@@ -1378,7 +1605,12 @@ local function TE_applyEdits(base, selectedEdits)
                 gg.sleep(300)
                 gg.setValues({{address=base+TE.EditTicketRefill, flags=gg.TYPE_DWORD, value=orig}})
             end
-        elseif idx == 4 then batch[#batch+1] = {address=base+TE.EditRetryDisable, flags=gg.TYPE_DWORD, value=-1}
+        elseif idx == 4 then
+            if storeOriginal then
+                local o = TE_readOne(base + TE.EditRetryDisable, gg.TYPE_DWORD)
+                if o then originals[#originals+1] = {address=base+TE.EditRetryDisable, flags=gg.TYPE_DWORD, value=o} end
+            end
+            batch[#batch+1] = {address=base+TE.EditRetryDisable, flags=gg.TYPE_DWORD, value=-1}
         elseif idx == 5 then
             if not TE_DurationInput then
                 local ui = gg.prompt({"Duration (HOURS) [1;48]:"}, {"1"}, {"number"})
@@ -1386,12 +1618,17 @@ local function TE_applyEdits(base, selectedEdits)
                 TE_DurationInput = tonumber(ui[1]) or 1
             end
             local fv = 3600 * TE_DurationInput
-            batch[#batch+1] = {address=base+TE.EditTeamDurationStart, flags=gg.TYPE_DWORD, value=fv}
-            batch[#batch+1] = {address=base+TE.EditTeamDurationEnd, flags=gg.TYPE_DWORD, value=fv}
+            for _, off in ipairs({TE.EditTeamDurationStart, TE.EditTeamDurationEnd}) do
+                if storeOriginal then
+                    local o = TE_readOne(base + off, gg.TYPE_DWORD)
+                    if o then originals[#originals+1] = {address=base+off, flags=gg.TYPE_DWORD, value=o} end
+                end
+                batch[#batch+1] = {address=base+off, flags=gg.TYPE_DWORD, value=fv}
+            end
         end
     end
     if #batch > 0 then if not pcall(function() gg.setValues(batch) end) then return false end end
-    return true
+    return true, originals
 end
 local function TE_enableEvent()
     if not next(TE_History) then gg.toast("⚠️ Chưa search event!"); return end
@@ -1401,17 +1638,36 @@ local function TE_enableEvent()
         local t = {}; for _ = 1, #labels do t[#t+1] = "checkbox" end; return t
     end)())
     if not eventPrompt then return end
-    local editNames = {"Matchmaking (1 player)","Team ticket unlimited","Refill Tickets [T-E]","Retry Disable","Duration [Leaders]"}
-    local editPrompt = gg.prompt(editNames, {}, {"checkbox","checkbox","checkbox","checkbox","checkbox"})
+    local editNames = {
+        "Matchmaking (1 player)","Team ticket unlimited","Refill Tickets [T-E]",
+        "Retry Disable","Duration [Leaders]","Timestamp Editor"
+    }
+    local editPrompt = gg.prompt(editNames, {}, {"checkbox","checkbox","checkbox","checkbox","checkbox","checkbox"})
     if not editPrompt then return end
     local sel = {}
     for k, v in pairs(editPrompt) do if v then sel[#sel+1] = k end end
     if #sel == 0 then gg.toast("⚠️ Không chọn edits!"); return end
+    local editedTable = {}
+    for _, idx in ipairs(sel) do
+        if idx == 1 then editedTable[TE.EditMatchmakingReq] = 1
+        elseif idx == 2 then editedTable[TE.EditTeamTicketJoin] = 0
+        elseif idx == 4 then editedTable[TE.EditRetryDisable] = -1
+        elseif idx == 5 then
+            local fv = 3600 * (TE_DurationInput or 1)
+            editedTable[TE.EditTeamDurationStart] = fv
+            editedTable[TE.EditTeamDurationEnd] = fv
+        end
+    end
     for i, isSelected in ipairs(eventPrompt) do
         if isSelected then
             local label = labels[i]; local hist = TE_History[label]; local cnt = 0
+            hist.originalValues = hist.originalValues or {}
             for _, r in ipairs(hist.results) do
-                if TE_applyEdits(r.address, sel) then cnt = cnt + 1 end
+                local ok, origs = TE_applyEdits(r.address, sel, true)
+                if ok and TE_verifyBase(r.address, editedTable) then
+                    cnt = cnt + 1
+                    if not hist.originalValues[r.address] then hist.originalValues[r.address] = origs end
+                end
             end
             hist.is_enabled = cnt > 0
             gg.toast(string.format("✅ Enabled %d/%d cho \"%s\"", cnt, #hist.results, label))
@@ -1431,14 +1687,27 @@ local function TE_disableEvent()
     for i, isSelected in ipairs(sel) do
         if isSelected then
             local label = labels[i]; local hist = TE_History[label]
-            for _, r in ipairs(hist.results) do
-                gg.setValues({
-                    {address=r.address+TE.EditMatchmakingReq, flags=gg.TYPE_DWORD, value=5},
-                    {address=r.address+TE.EditTeamTicketJoin, flags=gg.TYPE_DWORD, value=1},
-                    {address=r.address+TE.EditRetryDisable, flags=gg.TYPE_DWORD, value=1},
-                    {address=r.address+TE.EditTeamDurationStart, flags=gg.TYPE_DWORD, value=172800},
-                    {address=r.address+TE.EditTeamDurationEnd, flags=gg.TYPE_DWORD, value=172800},
-                })
+            if hist.originalValues then
+                for _, vals in pairs(hist.originalValues) do
+                    if vals and #vals > 0 then pcall(function() gg.setValues(vals) end) end
+                end
+                hist.originalValues = nil
+            else
+                for _, r in ipairs(hist.results) do
+                    gg.setValues({
+                        {address=r.address+TE.EditMatchmakingReq, flags=gg.TYPE_DWORD, value=5},
+                        {address=r.address+TE.EditTeamTicketJoin, flags=gg.TYPE_DWORD, value=1},
+                        {address=r.address+TE.EditRetryDisable, flags=gg.TYPE_DWORD, value=1},
+                        {address=r.address+TE.EditTeamDurationStart, flags=gg.TYPE_DWORD, value=172800},
+                        {address=r.address+TE.EditTeamDurationEnd, flags=gg.TYPE_DWORD, value=172800},
+                    })
+                end
+            end
+            if hist.vehicleOriginals then
+                for _, vals in pairs(hist.vehicleOriginals) do
+                    if vals and #vals > 0 then pcall(function() gg.setValues(vals) end) end
+                end
+                hist.vehicleOriginals = nil
             end
             hist.is_enabled = false
             gg.toast("⚠️ Disabled " .. label)
@@ -1452,6 +1721,63 @@ local function TE_showLogs()
         lines[#lines+1] = string.format("%s: %d entry [%s]", label, #h.results, h.is_enabled and "✅" or "❌")
     end
     gg.alert(table.concat(lines, "\n"))
+end
+local function TE_allowVehiclesInExisting()
+    if not next(TE_History) then gg.toast("⚠️ Chưa search event!"); return end
+    if not TE_ensureVehicleList() then return end
+    local labels = {}; for label, _ in pairs(TE_History) do labels[#labels+1] = label end
+    local pTypes = {}; for _ in ipairs(labels) do table.insert(pTypes, "checkbox") end
+    local eventPrompt = gg.prompt(labels, {}, pTypes)
+    if not eventPrompt then return end
+    local vehicleNames, vehicleData = GameStatusVehicles[1], GameStatusVehicles[2]
+    local vTypes = {}; for _ in ipairs(vehicleNames) do table.insert(vTypes, "checkbox") end
+    local selected = gg.prompt(vehicleNames, {}, vTypes)
+    if not selected then return end
+    local chosen = {}
+    for i, v in ipairs(selected) do
+        if v then table.insert(chosen, {name = vehicleNames[i], data = vehicleData[i]}) end
+    end
+    if #chosen == 0 then return end
+    for i, isSelected in ipairs(eventPrompt) do
+        if isSelected then
+            local hist = TE_History[labels[i]]
+            hist.vehicleOriginals = hist.vehicleOriginals or {}
+            for addr, _ in pairs(hist.verified) do
+                local vStart = TE_readOne(addr + TE.AllowVehicleList1, gg.TYPE_QWORD)
+                local vEnd   = TE_readOne(addr + TE.AllowVehicleList2, gg.TYPE_QWORD)
+                if vStart and vEnd and vStart ~= 0 and vEnd > vStart then
+                    local maxCapacity = math.floor((vEnd - vStart) / 0x18)
+                    local infoMsg = string.format(
+                        "Event: %s\nMax Slots: %d\nReplacing first %d vehicle(s).",
+                        labels[i], maxCapacity, #chosen
+                    )
+                    if gg.alert(infoMsg, "OK", "CANCEL") ~= 1 then return end
+                    local writeBatch, origBatch = {}, {}
+                    local countToReplace = math.min(#chosen, maxCapacity)
+                    for j = 1, countToReplace do
+                        local offset = (j - 1) * 0x18
+                        local idx = 0
+                        for num in chosen[j].data:gmatch("([^;]+)") do
+                            local targetAddr = vStart + offset + (idx * 4)
+                            local curVal = TE_readOne(targetAddr, gg.TYPE_DWORD)
+                            if curVal ~= nil then
+                                table.insert(origBatch, {address = targetAddr, flags = gg.TYPE_DWORD, value = curVal})
+                            end
+                            table.insert(writeBatch, {
+                                address = targetAddr,
+                                flags = gg.TYPE_DWORD,
+                                value = tonumber((num:gsub(",", ""))) or 0
+                            })
+                            idx = idx + 1
+                        end
+                    end
+                    if #origBatch > 0 then table.insert(hist.vehicleOriginals, origBatch) end
+                    gg.setValues(writeBatch)
+                end
+            end
+            gg.toast("✅ Vehicle(s) replaced for: " .. labels[i])
+        end
+    end
 end
 local function TE_setVehicleLimit()
     if not next(TE_History) then gg.toast("⚠️ Chưa search event!"); return end
@@ -1483,6 +1809,149 @@ local function TE_setVehicleLimit()
         end
     end
 end
+local function TE_verifyVehicleCache()
+    if not TE_VehicleCache.base or not TE_VehicleCache.limitBase then return false end
+    if TE_readOne(TE_VehicleCache.base, gg.TYPE_DWORD) == nil or TE_readOne(TE_VehicleCache.limitBase, gg.TYPE_DWORD) == nil then
+        gg.toast("❌ Vehicle/Limit cache expired")
+        TE_VehicleCache.base = nil
+        TE_VehicleCache.limitBase = nil
+        return false
+    end
+    return true
+end
+local function TE_searchVehicleMemory()
+    gg.clearResults(); gg.setRanges(RANGE_VALUE)
+    gg.searchNumber(string.rep("0;", 64) .. "::253", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 1000)
+    if gg.getResultsCount() == 0 then gg.toast("❌ Vehicle memory not found"); return nil end
+    local vehicleBase = gg.getResults(1)[1].address
+    gg.clearResults(); gg.setRanges(gg.REGION_ANONYMOUS)
+    gg.searchNumber(string.rep("0;", 64) .. "::253", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 50)
+    if gg.getResultsCount() == 0 then gg.toast("❌ Limit memory not found"); return nil end
+    local limitBase = gg.getResults(1)[1].address
+    gg.clearResults(); gg.setRanges(RANGE_VALUE)
+    TE_VehicleCache.base = vehicleBase
+    TE_VehicleCache.limitBase = limitBase
+    TE_VehicleCache.timestamp = os.time()
+    gg.toast("✅ Vehicle memory cached")
+    return { vehicleBase, limitBase }
+end
+local function TE_allowVehicleNewLists()
+    if not next(TE_History) then gg.toast("⚠️ Search for Event first!"); return end
+    if not TE_ensureVehicleList() then return end
+    local labels = {}; for label, _ in pairs(TE_History) do labels[#labels+1] = label end
+    local pTypes = {}; for _ in ipairs(labels) do table.insert(pTypes, "checkbox") end
+    local eventPrompt = gg.prompt(labels, {}, pTypes)
+    if not eventPrompt then return end
+    local vehicleNames = GameStatusVehicles[1]
+    local vTypes = {}; for _ in ipairs(vehicleNames) do table.insert(vTypes, "checkbox") end
+    local selected = gg.prompt(vehicleNames, {}, vTypes)
+    if not selected then return end
+    local chosenVehicles = {}
+    for i, sel in ipairs(selected) do
+        if sel then table.insert(chosenVehicles, { name = vehicleNames[i], data = GameStatusVehicles[2][i] }) end
+    end
+    local chosenCount = #chosenVehicles
+    if chosenCount == 0 then return end
+    local limitInput = gg.prompt({"Enter Vehicle Limit:"}, {"20"}, {"number"})
+    if not limitInput then return end
+    local limitValue = tonumber(limitInput[1]) or 1
+    local memoryAddrs = TE_verifyVehicleCache() and { TE_VehicleCache.base, TE_VehicleCache.limitBase } or TE_searchVehicleMemory()
+    if not memoryAddrs then return end
+    local vehicleBase, limitBase = memoryAddrs[1], memoryAddrs[2]
+    local writeBatch = {}
+    for i, v in ipairs(chosenVehicles) do
+        local offset = (i - 1) * 0x18
+        local idx = 0
+        for num in v.data:gmatch("([^;]+)") do
+            table.insert(writeBatch, {
+                address = vehicleBase + offset + (idx * 4),
+                flags = gg.TYPE_DWORD,
+                value = tonumber((num:gsub(",", ""))) or 0
+            })
+            idx = idx + 1
+        end
+    end
+    for i = 0, chosenCount - 1 do
+        table.insert(writeBatch, { address = limitBase + (i * 4), flags = gg.TYPE_DWORD, value = limitValue })
+    end
+    local ok = pcall(function() gg.setValues(writeBatch) end)
+    if not ok then
+        gg.toast("❌ Write failed")
+        TE_VehicleCache.base = nil
+        return
+    end
+    local vehicleEnd = vehicleBase + (chosenCount * 0x18)
+    local limitEnd = limitBase + (chosenCount * 4)
+    for i, isSelected in ipairs(eventPrompt) do
+        if isSelected then
+            local hist = TE_History[labels[i]]
+            hist.vehicleOriginals = hist.vehicleOriginals or {}
+            for addr, _ in pairs(hist.verified) do
+                local ptrOffsets = {
+                    TE.AllowVehicleList1, TE.AllowVehicleList2, TE.AllowVehicleList3,
+                    TE.SetVehicleLimit1, TE.SetVehicleLimit2, TE.SetVehicleLimit3
+                }
+                local origPtrs = {}
+                for _, po in ipairs(ptrOffsets) do
+                    local curP = TE_readOne(addr + po, gg.TYPE_QWORD)
+                    if curP then table.insert(origPtrs, {address = addr + po, flags = gg.TYPE_QWORD, value = curP}) end
+                end
+                if #origPtrs > 0 then table.insert(hist.vehicleOriginals, origPtrs) end
+                gg.setValues({
+                    { address = addr + TE.AllowVehicleList1, flags = gg.TYPE_QWORD, value = vehicleBase },
+                    { address = addr + TE.AllowVehicleList2, flags = gg.TYPE_QWORD, value = vehicleEnd },
+                    { address = addr + TE.AllowVehicleList3, flags = gg.TYPE_QWORD, value = vehicleEnd },
+                    { address = addr + TE.SetVehicleLimit1, flags = gg.TYPE_QWORD, value = limitBase },
+                    { address = addr + TE.SetVehicleLimit2, flags = gg.TYPE_QWORD, value = limitEnd },
+                    { address = addr + TE.SetVehicleLimit3, flags = gg.TYPE_QWORD, value = limitEnd }
+                })
+            end
+            gg.toast("✅ New Lists Linked to: " .. labels[i])
+        end
+    end
+    gg.clearResults()
+end
+local function TE_editGameModeValues(modeInfo)
+    if not modeInfo or #modeInfo == 0 then gg.toast("⚠️ No mode info to edit"); return end
+    local promptLabels, promptDefault, promptTypes, promptMap = {}, {}, {}, {}
+    for idx, m in ipairs(modeInfo) do
+        if m.mode == "Distance Mode" then
+            table.insert(promptLabels, string.format("Mode %d | 🏁 Distance Value", m.jump))
+            table.insert(promptDefault, tostring(m.t198)); table.insert(promptTypes, "number")
+            table.insert(promptMap, {idx = idx, field = "t198"})
+            table.insert(promptLabels, string.format("Mode %d | 🏆 Max Points", m.jump))
+            table.insert(promptDefault, tostring(m.t1C8)); table.insert(promptTypes, "number")
+            table.insert(promptMap, {idx = idx, field = "t1C8"})
+        else
+            table.insert(promptLabels, string.format("Mode %d | ⏱ Min Time", m.jump))
+            table.insert(promptDefault, tostring(m.t198)); table.insert(promptTypes, "number")
+            table.insert(promptMap, {idx = idx, field = "t198"})
+            table.insert(promptLabels, string.format("Mode %d | ⏱ Max Time", m.jump))
+            table.insert(promptDefault, tostring(m.t1B0)); table.insert(promptTypes, "number")
+            table.insert(promptMap, {idx = idx, field = "t1B0"})
+            table.insert(promptLabels, string.format("Mode %d | 🏆 Max Points", m.jump))
+            table.insert(promptDefault, tostring(m.t1C8)); table.insert(promptTypes, "number")
+            table.insert(promptMap, {idx = idx, field = "t1C8"})
+        end
+    end
+    local userInput = gg.prompt(promptLabels, promptDefault, promptTypes)
+    if not userInput then gg.toast("⚠️ Edit canceled"); return end
+    local writeList, editedCount = {}, 0
+    for pIdx, map in ipairs(promptMap) do
+        local newVal = tonumber(userInput[pIdx])
+        if newVal then
+            local m = modeInfo[map.idx]
+            local targetPtr = (map.field == "t198" and m.ptr198) or (map.field == "t1B0" and m.ptr1B0) or (map.field == "t1C8" and m.ptr1C8)
+            if targetPtr then
+                table.insert(writeList, { address = targetPtr, flags = gg.TYPE_FLOAT, value = newVal })
+                editedCount = editedCount + 1
+            end
+        end
+    end
+    if #writeList == 0 then gg.toast("⚠️ Nothing to write"); return end
+    local ok, err = pcall(function() gg.setValues(writeList) end)
+    gg.toast(ok and string.format("✅ Edited %d values successfully!", editedCount) or ("❌ Write failed: " .. tostring(err)))
+end
 local function TE_analyzeGameMode()
     if not next(TE_History) then gg.toast("⚠️ Chưa search!"); return end
     local labels = {}
@@ -1490,27 +1959,37 @@ local function TE_analyzeGameMode()
     local ch = gg.choice(labels, nil, "Event để phân tích:")
     if not ch then return end
     local label = labels[ch]; local hist = TE_History[label]
+    if not hist or not hist.results or #hist.results == 0 then gg.toast("⚠️ No pointers"); return end
     local inp = gg.prompt({"Total Modes [1-5]:"}, {"1"}, {"number"})
     if not inp then return end
     local jumps = math.min(math.max(math.floor(tonumber(inp[1]) or 1), 1), 5)
     local jumpOffsets = {0, 0x8, 0x10, 0x18, 0x20}
     local modeInfo = {}
     for _, entry in ipairs(hist.results) do
-        if entry and entry.address then
-            local basePtr = TE_readOne(entry.address + TE.AnalyzeGameMode, gg.TYPE_QWORD)
+        if type(entry) == "table" and type(entry.address) == "number" then
+            local basePtrAddress = TE_safeAdd(entry.address, TE.AnalyzeGameMode)
+            local basePtr = basePtrAddress and TE_safeRead(basePtrAddress, gg.TYPE_QWORD)
             if basePtr and basePtr ~= 0 then
                 for i = 1, jumps do
-                    local jumpPtr = TE_readOne(basePtr + jumpOffsets[i], gg.TYPE_QWORD)
+                    local jumpPtrAddress = TE_safeAdd(basePtr, jumpOffsets[i])
+                    local jumpPtr = jumpPtrAddress and TE_safeRead(jumpPtrAddress, gg.TYPE_QWORD)
                     if jumpPtr and jumpPtr ~= 0 then
                         local function readF(o)
-                            local p = TE_readOne(jumpPtr + o, gg.TYPE_QWORD)
-                            if not p or p == 0 then return 0 end
-                            return TE_readOne(p, gg.TYPE_FLOAT) or 0
+                            local pAddr = TE_safeAdd(jumpPtr, o)
+                            local p = pAddr and TE_safeRead(pAddr, gg.TYPE_QWORD)
+                            if not p or p == 0 then return 0, nil end
+                            return TE_safeRead(p, gg.TYPE_FLOAT) or 0, p
                         end
-                        local v198, v1B0, v1C8 = readF(TE.EventScoreCheck1), readF(TE.EventScoreCheck2), readF(TE.EventScoreCheck3)
+                        local v198, p198 = readF(TE.EventScoreCheck1)
+                        local v1B0, p1B0 = readF(TE.EventScoreCheck2)
+                        local v1C8, p1C8 = readF(TE.EventScoreCheck3)
+                        v198, v1B0, v1C8 = tonumber(v198) or 0, tonumber(v1B0) or 0, tonumber(v1C8) or 0
                         if not (v198 == 0 and v1B0 == 0 and v1C8 == 0) then
-                            modeInfo[#modeInfo+1] = {jump=i, mode=(v1B0 == 0) and "Distance Mode" or "Time Attack Mode",
-                                t198=v198, t1B0=v1B0, t1C8=v1C8}
+                            modeInfo[#modeInfo+1] = {
+                                jump=i, mode=(v1B0 == 0) and "Distance Mode" or "Time Attack Mode",
+                                t198=v198, t1B0=v1B0, t1C8=v1C8,
+                                ptr198=p198, ptr1B0=p1B0, ptr1C8=p1C8
+                            }
                         end
                     end
                 end
@@ -1518,6 +1997,7 @@ local function TE_analyzeGameMode()
         end
     end
     if #modeInfo == 0 then gg.toast("❌ Không có mode hợp lệ!"); return end
+    hist.analysis = { modeInfo = modeInfo }
     local msg = "📌 Game Mode Analysis\nEvent: " .. label .. "\n\n"
     for _, m in ipairs(modeInfo) do
         msg = msg .. string.format("Mode %d (%s)\n", m.jump, m.mode)
@@ -1528,20 +2008,99 @@ local function TE_analyzeGameMode()
         end
     end
     gg.alert(msg)
+    local editChoice = gg.alert("Chỉnh sửa giá trị chế độ chơi?", "✅ Edit Values", "❌ No")
+    if editChoice == 1 then TE_editGameModeValues(modeInfo) end
+end
+local function TE_showEventScoreCalculation()
+    if not next(TE_History) then gg.toast("⚠️ No history found"); return end
+    local labels = {}
+    for k in pairs(TE_History) do table.insert(labels, k) end
+    local e = gg.choice(labels, nil, "Select Event")
+    if not e then return end
+    local eventName = labels[e]
+    local event = TE_History[eventName]
+    if not event or not event.analysis or not event.analysis.modeInfo then
+        gg.toast("⚠️ Run game mode analysis first")
+        TE_analyzeGameMode()
+        return
+    end
+    local modes = event.analysis.modeInfo
+    if #modes == 0 then gg.toast("⚠️ No modes detected"); return end
+    local menu, promptDefaults, promptTypes = {}, {}, {}
+    for i, m in ipairs(modes) do
+        menu[i] = string.format("Mode %d: %s", m.jump, m.mode)
+        promptDefaults[i] = false
+        promptTypes[i] = "checkbox"
+    end
+    local mResults = gg.prompt(menu, promptDefaults, promptTypes)
+    if not mResults then return end
+    for mIndex, isSelected in ipairs(mResults) do
+        if isSelected then
+            local m = modes[mIndex]
+            local msg = string.format("📌 Score Table\nEvent: %s\nMode %d (%s)\n\n", eventName, m.jump, m.mode)
+            local sourceCode
+            if m.mode == "Time Attack Mode" then
+                msg = msg .. "Score → Time\n--------------\n"
+                sourceCode = string.format([[
+local sheet = {{}, {}}
+sheet[1][2] = %s
+sheet[2][2] = %s
+local function eval(score)
+  local x = (score - 1000) / 14000
+  return sheet[2][2] - (sheet[2][2] - sheet[1][2]) * math.sqrt(x)
+end
+print('Score | Time Needed')
+for score = 15000, 1000, -1000 do
+  local r = eval(score)
+  if score == 15000 or score == 1000 then
+    print(score .. '  |  ' .. string.format('%%.0fs', r))
+  else
+    print(score .. '  |  ' .. string.format('%%.9fs', r))
+  end
+end
+]], tostring(tonumber(m.t198) or 0), tostring(tonumber(m.t1B0) or 0))
+            else
+                msg = msg .. "Score → Distance\n-------------------\n"
+                sourceCode = string.format([[
+local b1, b2 = 0, %s
+print("B1 =", b1)
+print("B2 =", b2)
+print("")
+for tier = 15, 1, -1 do
+  local X = 1000 + (tier - 1) * 1000
+  local original = b2 - (b2 - b1) * math.sqrt((X - 1000) / 14000)
+  local mirrored = b1 + b2 - original
+  print(string.format("%%02d. | Score %%5d = %%.4fm", tier, X, mirrored))
+end
+]], tostring(tonumber(m.t198) or 0))
+            end
+            local stdout, err = TE_runJudge0(sourceCode, m.mode)
+            if stdout then
+                gg.toast(msg)
+                gg.alert("OUTPUT:\n\n" .. stdout)
+            else
+                gg.alert("Error: " .. (err or "Unknown"))
+            end
+        end
+    end
 end
 local function TeamEventMenu()
     local menu = {
         "🔍 SEARCH EVENT (BƯỚC 1)","✅ ENABLE TEAM EVENT","❌ DISABLE TEAM EVENT",
-        "📝 SHOW LOGS","🥀 Set Vehicle Limit","🔬 GAME MODES INFO","⬅️ Quay lại"
+        "📝 SHOW LOGS","🥀 New Vehicle + Limit","🚗 Set Vehicle Limit",
+        "🥀 Existing Allow Vehicle [Replaced]","🔬 GAME MODES INFO","🥇 SCORING SYSTEM","⬅️ Quay lại"
     }
     local choice = gg.choice(menu, nil, "🎯 TEAM EVENT")
-    if choice == nil or choice == 7 then return MainMenu() end
+    if choice == nil or choice == 10 then return MainMenu() end
     if choice == 1 then TE_searchEvent()
     elseif choice == 2 then TE_enableEvent()
     elseif choice == 3 then TE_disableEvent()
     elseif choice == 4 then TE_showLogs()
-    elseif choice == 5 then TE_setVehicleLimit()
-    elseif choice == 6 then TE_analyzeGameMode() end
+    elseif choice == 5 then TE_allowVehicleNewLists()
+    elseif choice == 6 then TE_setVehicleLimit()
+    elseif choice == 7 then TE_allowVehiclesInExisting()
+    elseif choice == 8 then TE_analyzeGameMode()
+    elseif choice == 9 then TE_showEventScoreCalculation() end
     return TeamEventMenu()
 end
 
