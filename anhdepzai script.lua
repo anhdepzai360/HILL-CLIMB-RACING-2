@@ -463,7 +463,7 @@ end
 local function tracksEditor()
     local input = gg.prompt({
         "🗺️ Tên Map (VD: Countryside):","📏 Độ dài hiện tại (m):","📐 Độ dài mới (m):","✅"
-    }, {"", "", "", true}, {"text", "number", "checkbox", "checkbox"})
+    }, {"", "", "", true}, {"text", "number", "number", "checkbox"})
     if not input then return MainMenu() end
     local mapName = input[1]; local curLength = tonumber(input[2])
     local newLength = tonumber(input[3]); local doVerify = input[4]
