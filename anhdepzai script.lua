@@ -187,7 +187,7 @@ local function selectRange()
     }
     local labels = {}
     for _, r in ipairs(ranges) do table.insert(labels, r.name) end
-    local pick = gg.choice(labels, 0, "🧭 Chọn vùng nhớ (khuyến nghị C alloc)")
+    local pick = gg.choice(labels, 0, "⏱️ Chọn vùng nhớ (khuyến nghị: C alloc)")
     if not pick then os.exit() end
     if pick ~= 1 then gg.alert("⚠️ Range này có thể không hoạt động tốt!\nVui lòng dùng C alloc.") end
     RANGE_VALUE = ranges[pick].value
@@ -3107,6 +3107,505 @@ local function CreativeMenu()
     return CreativeMenu()
 end
 
+
+-- ═══════════════════════════════════════════════════════════════
+--  SWAP MAP (tích hợp từ swap map v2.lua)
+--  Dùng vùng nhớ đã chọn ở bước khởi động: C alloc / C data / Other.
+-- ═══════════════════════════════════════════════════════════════
+local function SwapMapMenu()
+    if not RANGE_VALUE then
+        gg.alert("❌ Chưa chọn vùng nhớ. Hãy khởi động lại script và chọn C alloc / C data / Other.")
+        return MainMenu()
+    end
+    CZGZGZG = RANGE_VALUE
+    gg.setRanges(CZGZGZG)
+    LPP3()
+    return MainMenu()
+end
+
+function LPP3()
+   DRAYQ = gg.choice( {
+	 "Forest",
+	 "Mountain",
+	 "Mine",
+	 "Desert Valley",
+	 "Exit"} , 0, "By ANHDEPZAI")
+        if DRAYQ == nil then else
+        if DRAYQ == 1 then DFK='h 6A 73 6F 6E 2F 6C 65 76 65 6C 73 2F 66 6F 72 65 73 74 5F 64 69 73 74 61 6E 63 65 2E 6A 73 6F 6E' o1() end
+        if DRAYQ == 2 then DFK='h 6A 73 6F 6E 2F 6C 65 76 65 6C 73 2F 6D 6F 75 6E 74 61 69 6E 5F 64 69 73 74 61 6E 63 65 5F 30 31 2E 6A 73 6F 6E' o1() end
+        if DRAYQ == 3 then DFK='h 6A 73 6F 6E 2F 6C 65 76 65 6C 73 2F 6D 69 6E 65 5F 64 69 73 74 61 6E 63 65 2E 6A 73 6F 6E' o1() end
+        if DRAYQ == 4 then DFK='h 6A 73 6F 6E 2F 6C 65 76 65 6C 73 2F 72 6F 75 74 65 36 36 5F 64 69 73 74 61 6E 63 65 2E 6A 73 6F 6E' o1() end
+        if DRAYQ == 5 then return end
+    end
+end
+
+function o1()
+   hjka = gg.choice( {
+	 "3d test ",
+"amused park cup",
+"amused park cup 2",
+"amusementpark cup 3",
+"amusementpark distance",
+"amusementpark glitchtest",
+"amusement park distance",
+"ancient arena distance 1",
+"angry bill ",
+"angry bill  03",
+"angry bill event ",
+"angry jump ",
+"arena cup",
+"arena cup 2",
+"arena hard distance ",
+"backwaterbog crocodile cup ",
+"beach cup 4",
+"beach cup ",
+"beach distance ",
+"big air cup ",
+"boards ",
+"boards  easy",
+"boggy road ",
+"bog cup ",
+"bonus level ",
+"cargo  2",
+"cargo event ",
+"city 01 ",
+"city 02 ",
+"city capital 01 ",
+"city distance ",
+"city hard distance ",
+"city highway 01 ",
+"city highway 02 ",
+"city highway 03 ",
+"city highway 04 ",
+"city lights 01 ",
+"clacier cup 1",
+"classic event ",
+"cny event ",
+"collect balloons event",
+"countryside ",
+"countryside cup 01 ",
+"countryside cup 02 ",
+"countryside cup 03 ",
+"countryside distance ",
+"countryside sensor dev ",
+"cuptown cup",
+"cuptown cup 02",
+"cuptown distance",
+"cuptown distance  test",
+"cuptown easy cup",
+"darkforest distance ",
+"dark forest cup ",
+"dark roads ",
+"desert caves ",
+"desert to city ",
+"downhill ",
+"downhill cup ",
+"downhill trials ",
+"easy mine ",
+"equip tuningparts event",
+"floor is lava ",
+"football 01 ",
+"forest 01 ",
+"forest 02 ",
+"forest 03 ",
+"forest 04 ",
+"forest 05 ",
+"forest ",
+"forest cup logs ",
+"forest distance ",
+"forest hard distance ",
+"formula city 2 ",
+"formula city ",
+"glacier cup 04",
+"glacier cup 2",
+"glacier distance ",
+"gloomvale cup ",
+"gravityland ",
+"halloween 2",
+"halloween event ",
+"halloween event  2",
+"halloween event  3",
+"hallo cup ",
+"hillclimb2 ",
+"hillclimb mine ",
+"hillclimb mountain ",
+"hillclimb winter ",
+"jump cargo ",
+"jump original ",
+"level arena bronze",
+"level countryside ",
+"level forest2 ",
+"level tutorial",
+"long city 01 ",
+"long desert ",
+"long glacier 01 ",
+"long mine 01 ",
+"long winter ",
+"marshland cup ",
+"mine ",
+"mine  2",
+"mine distance ",
+"moon ",
+"moon distance ",
+"moon tricks ",
+"mountain 01 ",
+"mountain 02 ",
+"mountain 06 ",
+"mountain 07 ",
+"mountain ",
+"mountain bridges ",
+"mountain cup 01 ",
+"mountain distance ",
+"mountain downhill 01",
+"nationalpark distance",
+"nationalpark distance ",
+"paradisebay",
+"potatofield",
+"rocky road ",
+"rocky road  verse3",
+"roofs 01 ",
+"roofs 02 ",
+"rookie cup ",
+"rookie forest ",
+"route66 distance ",
+"route66 fast ",
+"route66 slow ",
+"savanna cup",
+"savanna distance ",
+"skill ",
+"speedball ",
+"spring falls cup",
+"spring falls cup 03",
+"stormrider cup",
+"testarea ",
+"test ",
+"test  deform",
+"test cup ",
+"test water ",
+"thunderstorm avoid event",
+"trailerpark cup",
+"trailerpark distance ",
+"tunnels ",
+"tutorial 6",
+"tutorial ",
+"underwater cup 1",
+"underwater cup ",
+"underwater distance ",
+"underwater kraken cup 1",
+"underwater long cup 1",
+"uphill cup ",
+"water run ",
+"wheelie ",
+"winter cup ",
+"winter cup  easy",
+"winter cup  tuningparts",
+"winter distance ",
+"winter hard distance ",
+"workshop cup ",
+"workshop distance ",
+"workshop factory cup ",
+"bobble-head",
+"double-exhaust",
+"exhaust-extreme",
+"exhaust-long",
+"exhaust-turned",
+"horn",
+"mirror-green",
+"rocket",
+"adv_token_stack01",
+"coin_stack01",
+"coin_stack02",
+"dual_room",
+"gemcoin_stack01",
+"gemcoin_stack02",
+"gem_stack01",
+"gem_stack02",
+"single_adv_token",
+"single_coin",
+"single_diamond1",
+"single_diamond2",
+"single_diamond3",
+"single_room",
+"helipack",
+"driver",
+"driver_naked",
+"driver_sitting",
+"driver-hat",
+"Abduction Alert",
+"Thunder 6"} , 0, "By anhdepzai")
+if hjka == nil then else
+if hjka==1 then QQA="rube/levels/3d_test_blocks.rube" zxcz() end
+if hjka==2 then QQA="rube/levels/amused_park_cup.rube" zxcz() end
+if hjka==3 then QQA="rube/levels/amused_park_cup_2.rube" zxcz() end
+if hjka==4 then QQA="rube/levels/amusementpark_cup_3.rube" zxcz() end
+if hjka==5 then QQA="rube/levels/amusementpark_distance.rube" zxcz() end
+if hjka==6 then QQA="rube/levels/amusementpark_glitchtest.rube" zxcz() end
+if hjka==7 then QQA="rube/levels/amusement_park_distance.rube" zxcz() end
+if hjka==8 then QQA="rube/levels/ancient_arena_distance_1.rube" zxcz() end
+if hjka==9 then QQA="rube/levels/angry_bill_blocks.rube" zxcz() end
+if hjka==10 then QQA="rube/levels/angry_bill_blocks_03.rube" zxcz() end
+if hjka==11 then QQA="rube/levels/angry_bill_event_blocks.rube" zxcz() end
+if hjka==12 then QQA="rube/levels/angry_jump_blocks.rube" zxcz() end
+if hjka==13 then QQA="rube/levels/arena_cup.rube" zxcz() end
+if hjka==14 then QQA="rube/levels/arena_cup_2.rube" zxcz() end
+if hjka==15 then QQA="rube/levels/arena_hard_distance_blocks.rube" zxcz() end
+if hjka==16 then QQA="rube/levels/backwaterbog_crocodile_cup_blocks.rube" zxcz() end
+if hjka==17 then QQA="rube/levels/beach_cup_4.rube" zxcz() end
+if hjka==18 then QQA="rube/levels/beach_cup_blocks.rube" zxcz() end
+if hjka==19 then QQA="rube/levels/beach_distance_blocks.rube" zxcz() end
+if hjka==20 then QQA="rube/levels/big_air_cup_blocks.rube" zxcz() end
+if hjka==21 then QQA="rube/levels/boards_blocks.rube" zxcz() end
+if hjka==22 then QQA="rube/levels/boards_blocks_easy.rube" zxcz() end
+if hjka==23 then QQA="rube/levels/boggy_road_blocks.rube" zxcz() end
+if hjka==24 then QQA="rube/levels/bog_cup_blocks.rube" zxcz() end
+if hjka==25 then QQA="rube/levels/bonus_level_blocks.rube" zxcz() end
+if hjka==26 then QQA="rube/levels/cargo_blocks_2.rube" zxcz() end
+if hjka==27 then QQA="rube/levels/cargo_event_blocks.rube" zxcz() end
+if hjka==28 then QQA="rube/levels/city_01_blocks.rube" zxcz() end
+if hjka==29 then QQA="rube/levels/city_02_blocks.rube" zxcz() end
+if hjka==30 then QQA="rube/levels/city_capital_01_blocks.rube" zxcz() end
+if hjka==31 then QQA="rube/levels/city_distance_blocks.rube" zxcz() end
+if hjka==32 then QQA="rube/levels/city_hard_distance_blocks.rube" zxcz() end
+if hjka==33 then QQA="rube/levels/city_highway_01_blocks.rube" zxcz() end
+if hjka==34 then QQA="rube/levels/city_highway_02_blocks.rube" zxcz() end
+if hjka==35 then QQA="rube/levels/city_highway_03_blocks.rube" zxcz() end
+if hjka==36 then QQA="rube/levels/city_highway_04_blocks.rube" zxcz() end
+if hjka==37 then QQA="rube/levels/city_lights_01_blocks.rube" zxcz() end
+if hjka==38 then QQA="rube/levels/clacier_cup_1.rube" zxcz() end
+if hjka==39 then QQA="rube/levels/classic_event_blocks.rube" zxcz() end
+if hjka==40 then QQA="rube/levels/cny_event_blocks.rube" zxcz() end
+if hjka==41 then QQA="rube/levels/collect_balloons_event.rube" zxcz() end
+if hjka==42 then QQA="rube/levels/countryside_blocks.rube" zxcz() end
+if hjka==43 then QQA="rube/levels/countryside_cup_01_blocks.rube" zxcz() end
+if hjka==44 then QQA="rube/levels/countryside_cup_02_blocks.rube" zxcz() end
+if hjka==45 then QQA="rube/levels/countryside_cup_03_blocks.rube" zxcz() end
+if hjka==46 then QQA="rube/levels/countryside_distance_blocks.rube" zxcz() end
+if hjka==47 then QQA="rube/levels/countryside_sensor_dev_blocks.rube" zxcz() end
+if hjka==48 then QQA="rube/levels/cuptown_cup.rube" zxcz() end
+if hjka==49 then QQA="rube/levels/cuptown_cup_02.rube" zxcz() end
+if hjka==50 then QQA="rube/levels/cuptown_distance.rube" zxcz() end
+if hjka==51 then QQA="rube/levels/cuptown_distance_blocks_test.rube" zxcz() end
+if hjka==52 then QQA="rube/levels/cuptown_easy_cup.rube" zxcz() end
+if hjka==53 then QQA="rube/levels/darkforest_distance_blocks.rube" zxcz() end
+if hjka==54 then QQA="rube/levels/dark_forest_cup_blocks.rube" zxcz() end
+if hjka==55 then QQA="rube/levels/dark_roads_blocks.rube" zxcz() end
+if hjka==56 then QQA="rube/levels/desert_caves_blocks.rube" zxcz() end
+if hjka==57 then QQA="rube/levels/desert_to_city_blocks.rube" zxcz() end
+if hjka==58 then QQA="rube/levels/downhill_blocks.rube" zxcz() end
+if hjka==59 then QQA="rube/levels/downhill_cup_blocks.rube" zxcz() end
+if hjka==60 then QQA="rube/levels/downhill_trials_blocks.rube" zxcz() end
+if hjka==61 then QQA="rube/levels/easy_mine_blocks.rube" zxcz() end
+if hjka==62 then QQA="rube/levels/equip_tuningparts_event.rube" zxcz() end
+if hjka==63 then QQA="rube/levels/floor_is_lava_blocks.rube" zxcz() end
+if hjka==64 then QQA="rube/levels/football_01_blocks.rube" zxcz() end
+if hjka==65 then QQA="rube/levels/forest_01_blocks.rube" zxcz() end
+if hjka==66 then QQA="rube/levels/forest_02_blocks.rube" zxcz() end
+if hjka==67 then QQA="rube/levels/forest_03_blocks.rube" zxcz() end
+if hjka==68 then QQA="rube/levels/forest_04_blocks.rube" zxcz() end
+if hjka==69 then QQA="rube/levels/forest_05_blocks.rube" zxcz() end
+if hjka==70 then QQA="rube/levels/forest_blocks.rube" zxcz() end
+if hjka==71 then QQA="rube/levels/forest_cup_logs_blocks.rube" zxcz() end
+if hjka==72 then QQA="rube/levels/forest_distance_blocks.rube" zxcz() end
+if hjka==73 then QQA="rube/levels/forest_hard_distance_blocks.rube" zxcz() end
+if hjka==74 then QQA="rube/levels/formula_city_2_blocks.rube" zxcz() end
+if hjka==75 then QQA="rube/levels/formula_city_blocks.rube" zxcz() end
+if hjka==76 then QQA="rube/levels/glacier_cup_04.rube" zxcz() end
+if hjka==77 then QQA="rube/levels/glacier_cup_2.rube" zxcz() end
+if hjka==78 then QQA="rube/levels/glacier_distance_blocks.rube" zxcz() end
+if hjka==79 then QQA="rube/levels/gloomvale_cup_blocks.rube" zxcz() end
+if hjka==80 then QQA="rube/levels/gravityland_blocks.rube" zxcz() end
+if hjka==81 then QQA="rube/levels/halloween_blocks2.rube" zxcz() end
+if hjka==82 then QQA="rube/levels/halloween_event_blocks.rube" zxcz() end
+if hjka==83 then QQA="rube/levels/halloween_event_blocks_2.rube" zxcz() end
+if hjka==84 then QQA="rube/levels/halloween_event_blocks_3.rube" zxcz() end
+if hjka==85 then QQA="rube/levels/hallo_cup_blocks.rube" zxcz() end
+if hjka==86 then QQA="rube/levels/hillclimb2_blocks.rube" zxcz() end
+if hjka==87 then QQA="rube/levels/hillclimb_mine_blocks.rube" zxcz() end
+if hjka==88 then QQA="rube/levels/hillclimb_mountain_blocks.rube" zxcz() end
+if hjka==89 then QQA="rube/levels/hillclimb_winter_blocks.rube" zxcz() end
+if hjka==90 then QQA="rube/levels/jump_cargo_blocks.rube" zxcz() end
+if hjka==91 then QQA="rube/levels/jump_original_blocks.rube" zxcz() end
+if hjka==92 then QQA="rube/levels/level_arena_bronze.rube" zxcz() end
+if hjka==93 then QQA="rube/levels/level_countryside_blocks.rube" zxcz() end
+if hjka==94 then QQA="rube/levels/level_forest2_blocks.rube" zxcz() end
+if hjka==95 then QQA="rube/levels/level_tutorial.rube" zxcz() end
+if hjka==96 then QQA="rube/levels/long_city_01_blocks.rube" zxcz() end
+if hjka==97 then QQA="rube/levels/long_desert_blocks.rube" zxcz() end
+if hjka==98 then QQA="rube/levels/long_glacier_01_blocks.rube" zxcz() end
+if hjka==99 then QQA="rube/levels/long_mine_01_blocks.rube" zxcz() end
+if hjka==100 then QQA="rube/levels/long_winter_blocks.rube" zxcz() end
+if hjka==101 then QQA="rube/levels/marshland_cup_blocks.rube" zxcz() end
+if hjka==102 then QQA="rube/levels/mine_blocks.rube" zxcz() end
+if hjka==103 then QQA="rube/levels/mine_blocks_2.rube" zxcz() end
+if hjka==104 then QQA="rube/levels/mine_distance_blocks.rube" zxcz() end
+if hjka==105 then QQA="rube/levels/moon_blocks.rube" zxcz() end
+if hjka==106 then QQA="rube/levels/moon_distance_blocks.rube" zxcz() end
+if hjka==107 then QQA="rube/levels/moon_tricks_blocks.rube" zxcz() end
+if hjka==108 then QQA="rube/levels/mountain_01_blocks.rube" zxcz() end
+if hjka==109 then QQA="rube/levels/mountain_02_blocks.rube" zxcz() end
+if hjka==110 then QQA="rube/levels/mountain_06_blocks.rube" zxcz() end
+if hjka==111 then QQA="rube/levels/mountain_07_blocks.rube" zxcz() end
+if hjka==112 then QQA="rube/levels/mountain_blocks.rube" zxcz() end
+if hjka==113 then QQA="rube/levels/mountain_bridges_blocks.rube" zxcz() end
+if hjka==114 then QQA="rube/levels/mountain_cup_01_blocks.rube" zxcz() end
+if hjka==115 then QQA="rube/levels/mountain_distance_blocks.rube" zxcz() end
+if hjka==116 then QQA="rube/levels/mountain_downhill_01.rube" zxcz() end
+if hjka==117 then QQA="rube/levels/nationalpark_distance.rube" zxcz() end
+if hjka==118 then QQA="rube/levels/nationalpark_distance_blocks.rube" zxcz() end
+if hjka==119 then QQA="rube/levels/paradisebay.rube" zxcz() end
+if hjka==120 then QQA="rube/levels/potatofield.rube" zxcz() end
+if hjka==121 then QQA="rube/levels/rocky_road_blocks.rube" zxcz() end
+if hjka==122 then QQA="rube/levels/rocky_road_blocks_verse3.rube" zxcz() end
+if hjka==123 then QQA="rube/levels/roofs_01_blocks.rube" zxcz() end
+if hjka==124 then QQA="rube/levels/roofs_02_blocks.rube" zxcz() end
+if hjka==125 then QQA="rube/levels/rookie_cup_blocks.rube" zxcz() end
+if hjka==126 then QQA="rube/levels/rookie_forest_blocks.rube" zxcz() end
+if hjka==127 then QQA="rube/levels/route66_distance_blocks.rube" zxcz() end
+if hjka==128 then QQA="rube/levels/route66_fast_blocks.rube" zxcz() end
+if hjka==129 then QQA="rube/levels/route66_slow_blocks.rube" zxcz() end
+if hjka==130 then QQA="rube/levels/savanna_cup.rube" zxcz() end
+if hjka==131 then QQA="rube/levels/savanna_distance_blocks.rube" zxcz() end
+if hjka==132 then QQA="rube/levels/skill_blocks.rube" zxcz() end
+if hjka==133 then QQA="rube/levels/speedball_blocks.rube" zxcz() end
+if hjka==134 then QQA="rube/levels/spring_falls_cup.rube" zxcz() end
+if hjka==135 then QQA="rube/levels/spring_falls_cup_03.rube" zxcz() end
+if hjka==136 then QQA="rube/levels/stormrider_cup.rube" zxcz() end
+if hjka==137 then QQA="rube/levels/testarea_blocks.rube" zxcz() end
+if hjka==138 then QQA="rube/levels/test_blocks.rube" zxcz() end
+if hjka==139 then QQA="rube/levels/test_blocks_deform.rube" zxcz() end
+if hjka==140 then QQA="rube/levels/test_cup_blocks.rube" zxcz() end
+if hjka==141 then QQA="rube/levels/test_water_blocks.rube" zxcz() end
+if hjka==142 then QQA="rube/levels/thunderstorm_avoid_event.rube" zxcz() end
+if hjka==143 then QQA="rube/levels/trailerpark_cup.rube" zxcz() end
+if hjka==144 then QQA="rube/levels/trailerpark_distance_blocks.rube" zxcz() end
+if hjka==145 then QQA="rube/levels/tunnels_blocks.rube" zxcz() end
+if hjka==146 then QQA="rube/levels/tutorial_6.rube" zxcz() end
+if hjka==147 then QQA="rube/levels/tutorial_blocks.rube" zxcz() end
+if hjka==148 then QQA="rube/levels/underwater_cup_1.rube" zxcz() end
+if hjka==149 then QQA="rube/levels/underwater_cup_blocks.rube" zxcz() end
+if hjka==150 then QQA="rube/levels/underwater_distance_blocks.rube" zxcz() end
+if hjka==151 then QQA="rube/levels/underwater_kraken_cup_1.rube" zxcz() end
+if hjka==152 then QQA="rube/levels/underwater_long_cup_1.rube" zxcz() end
+if hjka==153 then QQA="rube/levels/uphill_cup_blocks.rube" zxcz() end
+if hjka==154 then QQA="rube/levels/water_run_blocks.rube" zxcz() end
+if hjka==155 then QQA="rube/levels/wheelie_blocks.rube" zxcz() end
+if hjka==156 then QQA="rube/levels/winter_cup_blocks.rube" zxcz() end
+if hjka==157 then QQA="rube/levels/winter_cup_blocks_easy.rube" zxcz() end
+if hjka==158 then QQA="rube/levels/winter_cup_blocks_tuningparts.rube" zxcz() end
+if hjka==159 then QQA="rube/levels/winter_distance_blocks.rube" zxcz() end
+if hjka==160 then QQA="rube/levels/winter_hard_distance_blocks.rube" zxcz() end
+if hjka==161 then QQA="rube/levels/workshop_cup_blocks.rube" zxcz() end
+if hjka==162 then QQA="rube/levels/workshop_distance_blocks.rube" zxcz() end
+if hjka==163 then QQA="rube/levels/workshop_factory_cup_blocks.rube" zxcz() end
+if hjka==164 then QQA="rube/attachments/bobble-head.rube" zxcz() end
+if hjka==165 then QQA="rube/attachments/double-exhaust.rube" zxcz() end
+if hjka==166 then QQA="rube/attachments/exhaust-extreme.rube" zxcz() end
+if hjka==167 then QQA="rube/attachments/exhaust-long.rube" zxcz() end
+if hjka==168 then QQA="rube/attachments/exhaust-turned.rube" zxcz() end
+if hjka==169 then QQA="rube/attachments/horn.rube" zxcz() end
+if hjka==170 then QQA="rube/attachments/mirror-green.rube" zxcz() end
+if hjka==171 then QQA="rube/attachments/rocket.rube" zxcz() end
+if hjka==172 then QQA="rube/elements/adv_token_stack01.rube" zxcz() end
+if hjka==173 then QQA="rube/elements/coin_stack01.rube" zxcz() end
+if hjka==174 then QQA="rube/elements/coin_stack02.rube" zxcz() end
+if hjka==175 then QQA="rube/elements/dual_room.rube" zxcz() end
+if hjka==176 then QQA="rube/elements/gemcoin_stack01.rube" zxcz() end
+if hjka==177 then QQA="rube/elements/gemcoin_stack02.rube" zxcz() end
+if hjka==178 then QQA="rube/elements/gem_stack01.rube" zxcz() end
+if hjka==179 then QQA="rube/elements/gem_stack02.rube" zxcz() end
+if hjka==180 then QQA="rube/elements/single_adv_token.rube" zxcz() end
+if hjka==181 then QQA="rube/elements/single_coin.rube" zxcz() end
+if hjka==182 then QQA="rube/elements/single_diamond1.rube" zxcz() end
+if hjka==183 then QQA="rube/elements/single_diamond2.rube" zxcz() end
+if hjka==184 then QQA="rube/elements/single_diamond3.rube" zxcz() end
+if hjka==185 then QQA="rube/elements/single_room.rube" zxcz() end
+if hjka==186 then QQA="rube/equipment/helipack.rube" zxcz() end
+if hjka==187 then QQA="rube/driver.rube" zxcz() end
+if hjka==188 then QQA="rube/driver_naked.rube" zxcz() end
+if hjka==189 then QQA="rube/driver_sitting.rube" zxcz() end
+if hjka==190 then QQA="rube/driver-hat.rube" zxcz() end
+if hjka==191 then QQA="rube/levels/ufo_team_event_blocks.rube" zxcz() end
+if hjka==192 then QQA="rube/levels/thunder_event_blocks.rube" zxcz() end
+    end
+end
+function DEESA()
+AAA = v[ZZCR].address
+QQQQW=gg.getValues({{address = v[ZZCR].address-16, flags = gg.TYPE_DWORD}})
+
+WSS = QQQQW[1].value
+VVC=0
+VVB=0
+
+if WSS ==37 then
+else
+ZZCR=ZZCR+1
+DEESA()
+end
+end
+function DEES()
+if ZERRDD==1 then
+DEESA()
+else
+DEESX()
+end
+end
+function DEESXAA()
+AAA = jg[1].address + 0x1C0 +8
+GTA=gg.getValues({{address = AAA, flags = gg.TYPE_DWORD}})
+ZZCR=ZZCR+1
+GTT = GTA[1].value
+if GTT==49 then AAA = jg[1].address + 0x1C0
+AAA=AAA+8
+gg.clearResults() else DEESX() end
+end
+function DEESX()
+gg.clearResults()
+AAA = v[ZZCR].address
+gg.searchNumber(""..AAA.."", gg.TYPE_QWORD, false, gg.SIGN_EQUAL, 0, -1)
+jg=gg.getResults(1)
+sl=gg.getResultCount()
+
+if sl==1 then
+DEESXAA()
+
+else
+ZZCR=ZZCR+1
+DEESX()
+end
+end
+function zxcz()
+ZZCR=1
+gg.clearResults()
+GYYYD=string.len(QQA)
+gg.setRanges(CZGZGZG)
+gg.clearList()
+gg.clearResults()
+gg.setVisible(false)
+gg.clearList()
+gg.setVisible(false)
+gg.searchNumber(""..DFK.."", gg.TYPE_BYTE)
+gg.searchNumber(":json/", gg.TYPE_BYTE)
+gg.searchNumber(":j", gg.TYPE_BYTE)
+v = gg.getResults(10000)
+DEESX()
+gg.setVisible(false)
+
+XCD=gg.getValues({{address = AAA+16, flags = gg.TYPE_QWORD}})
+gg.setValues({{address = AAA+8,flags = gg.TYPE_DWORD,value = GYYYD}})
+gg.clearList()
+SDREE = XCD[1].value
+gg.clearResults()
+gg.startFuzzy(gg.TYPE_BYTE, SDREE, SDREE+48)
+gg.getResults(GYYYD)
+gg.editAll(":"..QQA.."", gg.TYPE_BYTE)
+gg.setVisible(false)
+
+gg.toast("✅")
+gg.clearResults()
+gg.clearList()
+ZERRDD=0
+end
+
 -- ═══════════════════════════════════════════════════════════════
 --  MAIN MENU V3.4 (Đã tích hợp Vô hạn nhiên liệu)
 -- ═══════════════════════════════════════════════════════════════
@@ -3144,6 +3643,7 @@ function MainMenu()
         "🛞 Downforce",
         "🖼️ Mở khóa Background gara ẩn",
         "🎨 Creative (Any Theme + Hidden)",
+        "🗺️ Swap Map (190 maps)",
         "ℹ️ About",
         "❌ Exit"
     }
@@ -3180,8 +3680,9 @@ function MainMenu()
     elseif choice == 29 then ADZ_DownforceMenu()
     elseif choice == 30 then ADZ_UnlockHiddenGarageBg()
     elseif choice == 31 then CreativeMenu()
-    elseif choice == 32 then About()
-    elseif choice == 33 then
+    elseif choice == 32 then SwapMapMenu()
+    elseif choice == 33 then About()
+    elseif choice == 34 then
         ShowPrintMenu()
     end
 end
