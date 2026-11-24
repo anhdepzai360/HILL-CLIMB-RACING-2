@@ -2266,7 +2266,7 @@ function ADZ_PlayerMenu()
         "🚗 FleetTicket: "..p.fleet, "🎭 Fake Legend + Fake King",
         "🔄 TaskRefresh: "..p.task, "🔁 Reload Data", "⬅️ Quay lại"
     }
-    local c = gg.choice(items, nil, "👤 PLAYER DATA (39 chỉ số)")
+    local c = gg.choice(items, nil, "👤 PLAYER DATA")
     if not c or c == 40 then return MainMenu() end
     if c == 39 then ADZ_ReadPlayer(); return ADZ_PlayerMenu() end
     ADZ_PlayerEdit(c); ADZ_PlayerMenu()
@@ -3332,7 +3332,9 @@ function o1()
 "driver_sitting",
 "driver-hat",
 "Abduction Alert",
-"Thunder 6"} , 0, "By anhdepzai")
+"Thunder 6",
+"Halloween",
+"Pumpkin Halloween"} , 0, "By anhdepzai")
 if hjka == nil then else
 if hjka==1 then QQA="rube/levels/3d_test_blocks.rube" zxcz() end
 if hjka==2 then QQA="rube/levels/amused_park_cup.rube" zxcz() end
@@ -3526,6 +3528,8 @@ if hjka==189 then QQA="rube/driver_sitting.rube" zxcz() end
 if hjka==190 then QQA="rube/driver-hat.rube" zxcz() end
 if hjka==191 then QQA="rube/levels/ufo_team_event_blocks.rube" zxcz() end
 if hjka==192 then QQA="rube/levels/thunder_event_blocks.rube" zxcz() end
+if hjka==193 then QQA="rube/levels/halloween_event_blocks_3_r.rube" zxcz() end
+if hjka==194 then QQA="rube/levels/angry_halloween_event.rube" zxcz() end
     end
 end
 function DEESA()
@@ -3637,13 +3641,13 @@ function MainMenu()
         "🎉 Event Menu",
         "🚗 Vehicle Speed",
         "👁️ Global Vision",
-        "👤 Player Data (39)",
+        "👤 Player Data",
         "🔩 Super Parts Custom",
         "🎉 Events Shop",
         "🛞 Downforce",
         "🖼️ Mở khóa Background gara ẩn",
         "🎨 Creative (Any Theme + Hidden)",
-        "🗺️ Swap Map (190 maps)",
+        "🗺️ Swap Map",
         "ℹ️ About",
         "❌ Exit"
     }
