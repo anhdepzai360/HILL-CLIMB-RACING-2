@@ -5,6 +5,16 @@ end
 
 local KEY_LEN = 20
 
+local function printFinish(statusText, detailText)
+    print("==========================================")
+    print("KẾT THÚC SCRIPT — " .. tostring(statusText or "HOÀN TẤT"))
+    if detailText and detailText ~= "" then
+        print(detailText)
+    end
+    print("🇦 🇳 🇭 🇩 🇪 🇵 🇿 🇦 🇮 — by @anhdepzai")
+    print("==========================================")
+end
+
 local function getDefaultHeader(verTitle)
     return [[
 
@@ -478,36 +488,55 @@ local function main()
         "checkbox"
     })
 
-    if p and p[1] and p[1] ~= "" then
-        local selected = {}
-        if p[2] then table.insert(selected, "5.1") end
-        if p[3] then table.insert(selected, "5.2") end
-        if p[4] then table.insert(selected, "5.3") end
-        if p[5] then table.insert(selected, "5.4") end
-        if p[6] then table.insert(selected, "5.5") end
+    if not p or not p[1] or p[1] == "" then
+        printFinish("ĐÃ HỦY", "Người dùng đã hủy hoặc chưa chọn file.")
+        return
+    end
 
-        if #selected == 0 then
-            gg.alert("⚠️ Vui lòng tick ít nhất 1 kiểu Lua!")
-            return
-        end
+    local selected = {}
+    if p[2] then table.insert(selected, "5.1") end
+    if p[3] then table.insert(selected, "5.2") end
+    if p[4] then table.insert(selected, "5.3") end
+    if p[5] then table.insert(selected, "5.4") end
+    if p[6] then table.insert(selected, "5.5") end
 
-        local f, err = io.open(p[1], "rb")
-        if not f then
-            gg.alert("❌ Không mở được file gốc: " .. tostring(err))
-            return
-        end
-        local src = f:read("*a")
-        f:close()
+    if #selected == 0 then
+        gg.alert("⚠️ Vui lòng tick ít nhất 1 kiểu Lua!")
+        printFinish("DỪNG LẠI", "Chưa chọn kiểu Lua nào để mã hóa.")
+        return
+    end
 
-        local multi = (#selected > 1)
-        for _, verKey in ipairs(selected) do
-            local prof = LUA_PROFILES[verKey]
-            local outPath = getAutoOutputPath(p[1], prof.tag, multi)
-            encryptWithProfile(src, outPath, prof)
+    local f, err = io.open(p[1], "rb")
+    if not f then
+        gg.alert("❌ Không mở được file gốc: " .. tostring(err))
+        printFinish("LỖI MỞ FILE", "File gốc: " .. tostring(p[1]) .. " | Lỗi: " .. tostring(err))
+        return
+    end
+    local src = f:read("*a")
+    f:close()
+
+    local multi = (#selected > 1)
+    local successList = {}
+    local failList = {}
+
+    for _, verKey in ipairs(selected) do
+        local prof = LUA_PROFILES[verKey]
+        local outPath = getAutoOutputPath(p[1], prof.tag, multi)
+        local ok = encryptWithProfile(src, outPath, prof)
+        if ok then
+            table.insert(successList, prof.label .. " -> " .. outPath)
+            print("✅ Đã xuất [" .. prof.label .. "]: " .. outPath)
+        else
+            table.insert(failList, prof.label)
+            print("❌ Thất bại [" .. prof.label .. "]")
         end
     end
 
-    gg.alert(" 🇦 🇳 🇭 🇩 🇪 🇵 🇿 🇦 🇮\n\n— by @anhdepzai —")
+    local summary = "Tổng chọn: " .. #selected .. " | Thành công: " .. #successList .. " | Lỗi: " .. #failList
+    if #successList > 0 then
+        summary = summary .. "\nFile đã tạo:\n - " .. table.concat(successList, "\n - ")
+    end
+    printFinish(#successList > 0 and "MÃ HÓA XONG" or "KHÔNG THÀNH CÔNG", summary)
 end
 
 main()
